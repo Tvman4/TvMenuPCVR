@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-    <PackageReference Include="GorillaTag.GameLibs" Version="1.0.0" />
+    <PackageReference Include="BepInEx.GameLibs" Version="1.0.0-r.6" />
   </ItemGroup>
 
 </Project>
