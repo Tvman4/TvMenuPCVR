@@ -14,7 +14,6 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="UnityEngine.Modules" Version="2021.3.25" IncludeAssets="compile" />
-    <PackageReference Include="PhotonPUN" Version="2.41.0" />
   </ItemGroup>
 
 </Project>
