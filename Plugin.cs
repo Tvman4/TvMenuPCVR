@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.XR;
 using Photon.Pun;
 using System;
+using System.Collections.Generic;
 
 namespace TvMenu
 {
@@ -38,8 +39,12 @@ namespace TvMenu
         {
             // Toggle Menu with Y Button (Left Controller Secondary) or Insert Key
             bool yButtonPressed = false;
-            InputDevice leftController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-            leftController.IsPressed(InputFeatureUsages.secondaryButton, out yButtonPressed);
+            List<InputDevice> devices = new List<InputDevice>();
+            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, devices);
+            if (devices.Count > 0)
+            {
+                devices[0].TryGetFeatureValue(CommonUsages.secondaryButton, out yButtonPressed);
+            }
 
             if (yButtonPressed || UnityInput.Current.GetKeyDown(KeyCode.Insert))
             {
@@ -73,8 +78,12 @@ namespace TvMenu
                         {
                             rb.velocity = Vector3.zero;
                             bool primaryPressed = false;
-                            InputDevice controller = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-                            controller.IsPressed(InputFeatureUsages.primaryButton, out primaryPressed);
+                            List<InputDevice> devices = new List<InputDevice>();
+                            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, devices);
+                            if (devices.Count > 0)
+                            {
+                                devices[0].TryGetFeatureValue(CommonUsages.primaryButton, out primaryPressed);
+                            }
 
                             if (primaryPressed || UnityInput.Current.GetKey(KeyCode.Space))
                             {
@@ -100,10 +109,9 @@ namespace TvMenu
                     }
                 }
 
-                // Anti-Report Logic (Disconnects or blocks serialization triggers if someone attempts to log reports)
+                // Anti-Report Logic
                 if (miscSafetyStates[0] || antiReportEnabled)
                 {
-                    // Basic safety intercept framework for incoming report RPC events
                     try
                     {
                         var list = UnityEngine.Object.FindObjectsOfType<GorillaPlayerScoreboardLine>();
@@ -111,7 +119,7 @@ namespace TvMenu
                         {
                             if (line.reportButton != null)
                             {
-                                line.reportButton.enabled = false;
+                                line.reportButton.SetActive(false);
                             }
                         }
                     }
@@ -140,11 +148,10 @@ namespace TvMenu
                 if (PhotonNetwork.InRoom)
                 {
                     PhotonNetwork.Disconnect();
-                    // Will rejoin random matchmaking lobby pool automatically on next frame loop
                 }
             }
 
-            // --- CATEGory SELECTOR TABS ---
+            // --- CATEGORY SELECTOR TABS ---
             if (GUI.Button(new Rect(60, 120, 75, 25), "Move")) currentCategory = 0;
             if (GUI.Button(new Rect(138, 120, 75, 25), "Visual")) currentCategory = 1;
             if (GUI.Button(new Rect(216, 120, 75, 25), "Guns")) currentCategory = 2;
@@ -201,7 +208,7 @@ namespace TvMenu
                         miscSafetyStates[i] = !miscSafetyStates[i];
                     }
                     yOffset += 27;
-                    if (yOffset > 530) break; // Keep inside bounds
+                    if (yOffset > 530) break;
                 }
             }
         }
