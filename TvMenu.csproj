@@ -16,9 +16,9 @@
 
   <Target Name="DownloadGameLibs" BeforeTargets="CoreCompile">
     <MakeDir Directories="Libs" />
-    <DownloadFile SourceUrl="https://raw.githubusercontent.com/graicc/GorillaTagModTemplate/main/Libs/Assembly-CSharp.dll" DestinationFolder="Libs" Condition="!Exists('Libs/Assembly-CSharp.dll')" />
-    <DownloadFile SourceUrl="https://raw.githubusercontent.com/graicc/GorillaTagModTemplate/main/Libs/PhotonUnityNetworking.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonUnityNetworking.dll')" />
-    <DownloadFile SourceUrl="https://raw.githubusercontent.com/graicc/GorillaTagModTemplate/main/Libs/PhotonRealtime.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonRealtime.dll')" />
+    <DownloadFile SourceUrl="https://raw.githubusercontent.com/legoandmars/GorillaCosmetics/master/Libs/Assembly-CSharp.dll" DestinationFolder="Libs" Condition="!Exists('Libs/Assembly-CSharp.dll')" />
+    <DownloadFile SourceUrl="https://raw.githubusercontent.com/legoandmars/GorillaCosmetics/master/Libs/PhotonUnityNetworking.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonUnityNetworking.dll')" />
+    <DownloadFile SourceUrl="https://raw.githubusercontent.com/legoandmars/GorillaCosmetics/master/Libs/PhotonRealtime.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonRealtime.dll')" />
   </Target>
 
   <ItemGroup>
