@@ -18,10 +18,9 @@ jobs:
     - name: Download Game Dependencies
       run: |
         mkdir -p Libs
-        curl -L -o repo.zip https://github.com/Atmospheric-Excursions/Gorilla-Tag-Modding-Template/archive/refs/heads/main.zip
-        unzip repo.zip
-        cp Gorilla-Tag-Modding-Template-main/Libs/*.dll Libs/
-        rm -rf repo.zip Gorilla-Tag-Modding-Template-main
+        curl -L -o Libs/Assembly-CSharp.dll "https://raw.githubusercontent.com/Atmospheric-Excursions/Gorilla-Tag-Modding-Template/main/Libs/Assembly-CSharp.dll"
+        curl -L -o Libs/PhotonUnityNetworking.dll "https://raw.githubusercontent.com/Atmospheric-Excursions/Gorilla-Tag-Modding-Template/main/Libs/PhotonUnityNetworking.dll"
+        curl -L -o Libs/PhotonRealtime.dll "https://raw.githubusercontent.com/Atmospheric-Excursions/Gorilla-Tag-Modding-Template/main/Libs/PhotonRealtime.dll"
 
     - name: Restore Dependencies
       run: dotnet restore
