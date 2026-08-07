@@ -15,22 +15,14 @@
     <PackageReference Include="UnityEngine.Modules" Version="2021.3.25" IncludeAssets="compile" />
   </ItemGroup>
 
-  <!-- Automatically download the exact game assemblies from a verified mirror during build -->
-  <Target Name="EnsureLibs" BeforeTargets="CoreCompile">
-    <MakeDir Directories="Libs" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/master/Libs/Assembly-CSharp.dll" DestinationFolder="Libs" Condition="!Exists('Libs/Assembly-CSharp.dll')" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/master/Libs/PhotonUnityNetworking.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonUnityNetworking.dll')" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/master/Libs/PhotonRealtime.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonRealtime.dll')" />
-  </Target>
-
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
+    <Reference Include="Assembly-CSharp" Condition="Exists('Libs/Assembly-CSharp.dll')">
       <HintPath>Libs\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="PhotonUnityNetworking">
+    <Reference Include="PhotonUnityNetworking" Condition="Exists('Libs/PhotonUnityNetworking.dll')">
       <HintPath>Libs\PhotonUnityNetworking.dll</HintPath>
     </Reference>
-    <Reference Include="PhotonRealtime">
+    <Reference Include="PhotonRealtime" Condition="Exists('Libs/PhotonRealtime.dll')">
       <HintPath>Libs\PhotonRealtime.dll</HintPath>
     </Reference>
   </ItemGroup>
