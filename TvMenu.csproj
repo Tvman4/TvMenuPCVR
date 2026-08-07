@@ -13,37 +13,10 @@
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>Libs\Assembly-CSharp.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="PhotonUnityNetworking">
-      <HintPath>Libs\PhotonUnityNetworking.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="PhotonRealtime">
-      <HintPath>Libs\PhotonRealtime.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>Libs\UnityEngine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>Libs\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>Libs\UnityEngine.PhysicsModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.XRModule">
-      <HintPath>Libs\UnityEngine.XRModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <PackageReference Include="UnityEngine" Version="2021.3.25" IncludeAssets="compile;build" />
+    <PackageReference Include="UnityEngine.CoreModule" Version="2021.3.25" IncludeAssets="compile;build" />
+    <PackageReference Include="UnityEngine.PhysicsModule" Version="2021.3.25" IncludeAssets="compile;build" />
+    <PackageReference Include="UnityEngine.XRModule" Version="2021.3.25" IncludeAssets="compile;build" />
   </ItemGroup>
 
 </Project>
