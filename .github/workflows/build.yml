@@ -15,14 +15,6 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
-    - name: Download Game Dependencies
-      run: |
-        mkdir -p Libs
-        curl -L -o gtlibs.zip "https://github.com/legoandgears/GorillaTagModTemplate/archive/refs/heads/main.zip"
-        unzip -q gtlibs.zip
-        cp GorillaTagModTemplate-main/Libs/*.dll Libs/
-        rm -rf gtlibs.zip GorillaTagModTemplate-main
-
     - name: Restore Dependencies
       run: dotnet restore
 
