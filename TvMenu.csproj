@@ -7,13 +7,24 @@
     <Version>1.2.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <RestoreSources>https://api.nuget.org/v3/index.json;https://nuget.bepinex.dev/v3/index.json</RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-    <PackageReference Include="GorillaTag.GameLibs" Version="1.0.0" />
+    <PackageReference Include="UnityEngine.Modules" Version="2021.3.25" IncludeAssets="compile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>https://raw.githubusercontent.com/legoandmars/GorillaTagModTemplate/main/Libs/Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PhotonUnityNetworking">
+      <HintPath>https://raw.githubusercontent.com/legoandmars/GorillaTagModTemplate/main/Libs/PhotonUnityNetworking.dll</HintPath>
+    </Reference>
+    <Reference Include="PhotonRealtime">
+      <HintPath>https://raw.githubusercontent.com/legoandmars/GorillaTagModTemplate/main/Libs/PhotonRealtime.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
