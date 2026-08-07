@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Photon.Pun
@@ -35,25 +34,4 @@ namespace GorillaLocomotion
 public class GorillaPlayerScoreboardLine : MonoBehaviour
 {
     public GameObject reportButton;
-}
-
-namespace UnityEngine.XR
-{
-    public struct InputDevice
-    {
-        public bool IsPressed(object feature, out bool value) { value = false; return false; }
-    }
-
-    public static class InputDevices
-    {
-        public static void GetDevicesWithCharacteristics(uint desiredCharacteristics, List<InputDevice> devices) {}
-    }
-
-    public static class InputFeatureUsages
-    {
-        public static object primaryButton;
-        public static object secondaryButton;
-        public static object gripButton;
-        public static object triggerButton;
-    }
 }
