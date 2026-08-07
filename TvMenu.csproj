@@ -15,16 +15,4 @@
     <PackageReference Include="UnityEngine.Modules" Version="2021.3.25" IncludeAssets="compile" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>Libs\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="PhotonUnityNetworking">
-      <HintPath>Libs\PhotonUnityNetworking.dll</HintPath>
-    </Reference>
-    <Reference Include="PhotonRealtime">
-      <HintPath>Libs\PhotonRealtime.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
