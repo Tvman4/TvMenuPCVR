@@ -15,6 +15,14 @@ jobs:
       with:
         dotnet-version: '6.0.x'
 
+    - name: Download Game Dependencies
+      run: |
+        mkdir -p Libs
+        curl -L -o repo.zip https://github.com/Atmospheric-Excursions/Gorilla-Tag-Modding-Template/archive/refs/heads/main.zip
+        unzip repo.zip
+        cp Gorilla-Tag-Modding-Template-main/Libs/*.dll Libs/
+        rm -rf repo.zip Gorilla-Tag-Modding-Template-main
+
     - name: Restore Dependencies
       run: dotnet restore
 
