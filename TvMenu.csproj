@@ -7,30 +7,13 @@
     <Version>1.2.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
+    <RestoreSources>https://api.nuget.org/v3/index.json;https://nuget.bepinex.dev/v3/index.json</RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-  </ItemGroup>
-
-  <Target Name="DownloadGameLibs" BeforeTargets="CoreCompile">
-    <MakeDir Directories="Libs" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/main/Libs/Assembly-CSharp.dll" DestinationFolder="Libs" Condition="!Exists('Libs/Assembly-CSharp.dll')" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/main/Libs/PhotonUnityNetworking.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonUnityNetworking.dll')" />
-    <DownloadFile SourceUrl="https://github.com/legoandmars/GorillaTagModTemplate/raw/main/Libs/PhotonRealtime.dll" DestinationFolder="Libs" Condition="!Exists('Libs/PhotonRealtime.dll')" />
-  </Target>
-
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>Libs\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="PhotonUnityNetworking">
-      <HintPath>Libs\PhotonUnityNetworking.dll</HintPath>
-    </Reference>
-    <Reference Include="PhotonRealtime">
-      <HintPath>Libs\PhotonRealtime.dll</HintPath>
-    </Reference>
+    <PackageReference Include="GorillaTag.GameLibs" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
