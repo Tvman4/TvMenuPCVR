@@ -1,60 +1,63 @@
 using BepInEx;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.UI;
 using Photon.Pun;
 using System;
 using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.5")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Beta", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
-        public static bool menuOpen = true;
+        public static bool menuOpen = false;
         public static int currentCategory = 0;
-        public static int pageIndex = 0;
-        public static string searchQuery = "";
+        public static bool colorBlueEnabled = true;
 
         public static float speedBoostMultiplier = 1.75f;
         public static float flySpeed = 14f;
         public static float armLengthMultiplier = 1.4f;
         public static float lowGravityMultiplier = 0.35f;
-        public static float fovValue = 90f;
-        public static bool colorBlueEnabled = true;
 
+        // Mod states
+        public static bool[] movementStates = new bool[13];
+        public static bool[] visualStates = new bool[10];
+        public static bool[] gunStates = new bool[6];
+        public static bool[] miscSafetyStates = new bool[12];
+
+        // [W] = Working, [WIP] = Work In Progress (usable), [NW] = Not Working (locked)
         public static string[] movementMods = {
             "Speed Boost [W]", "Fly [W]", "Trigger Fly [W]", "Joystick Fly [W]", "WASD Fly [W]",
             "Long Arms [W]", "Air Jump [W]", "Low Gravity [W]", "Bunny Hop [W]", "Fast Slide [W]",
             "Zero Friction [W]", "Platform Balls [W]", "Noclip [W]"
         };
-        public static bool[] movementStates = new bool[13];
 
         public static string[] visualMods = {
             "Player ESP [W]", "Fullbright [W]", "FPS Counter [W]", "Name Tags [W]",
             "FOV Changer [W]", "Ghost Mode [W]", "Chams [WIP]", "Bone ESP [WIP]", "Third Person [WIP]", "Custom Skybox [WIP]"
         };
-        public static bool[] visualStates = new bool[10];
 
         public static string[] gunMods = {
             "Kick Gun [W]", "Lag Gun [WIP]", "Tag Gun [W]", "Auto Tag [WIP]", "Soundboard Spam [WIP]", "Invisibility [W]"
         };
-        public static bool[] gunStates = new bool[6];
 
         public static string[] miscSafetyMods = {
             "Anti-Report [W]", "Head Spin [W]", "Speedometer [W]", "Bouncing Surfaces [W]",
             "Sticky Hands [WIP]", "Fast Load [W]", "FPS Booster [W]", "Vibration Control [W]",
             "Position Logger [W]", "Config Save [W]", "Auto Report Deter [W]", "Disconnect Protect [W]"
         };
-        public static bool[] miscSafetyStates = new bool[12];
 
-        private static List<string> notificationLogs = new List<string>();
+        // VR Menu
+        private GameObject menuObject;
+        private Canvas menuCanvas;
+        private Transform leftHand;
+        private bool yWasPressed = false;
+
+        // Runtime
         private float blueThemeTimer = 0f;
-        private float lastFpsUpdate = 0f;
-        private int currentFps = 0;
         private Vector3 originalGravity;
         private bool gravityModified = false;
-        private float originalFov = 60f;
-        private bool fovModified = false;
 
         private GameObject leftBall;
         private GameObject rightBall;
@@ -62,98 +65,228 @@ namespace TvMenu
         private float leftBallTimer = 0f;
         private float rightBallTimer = 0f;
 
-        private GUIStyle boxStyle, buttonStyle, buttonOnStyle, buttonOffStyle, titleStyle, labelStyle, searchStyle, logStyle;
-        private bool stylesReady = false;
-        private Texture2D boxTex, btnTex, btnHoverTex, btnOnTex;
-
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.5 loaded");
+            Debug.Log("[TvMenu] TvMenu Beta 1.0.0 loaded - VR Wrist Menu");
         }
 
-        private void InitStyles()
+        private void Update()
         {
-            if (stylesReady) return;
-
-            boxTex = MakeTex(2, 2, new Color(0.02f, 0.06f, 0.16f, 0.97f));
-            btnTex = MakeTex(2, 2, new Color(0.06f, 0.18f, 0.42f, 1f));
-            btnHoverTex = MakeTex(2, 2, new Color(0.12f, 0.32f, 0.75f, 1f));
-            btnOnTex = MakeTex(2, 2, new Color(0.05f, 0.45f, 0.28f, 1f));
-
-            boxStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = boxTex, textColor = new Color(0.4f, 0.85f, 1f) },
-                fontSize = 16,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.UpperCenter,
-                padding = new RectOffset(8, 8, 8, 8)
-            };
-
-            buttonStyle = new GUIStyle(GUI.skin.button)
-            {
-                normal = { background = btnTex, textColor = Color.white },
-                hover = { background = btnHoverTex, textColor = Color.white },
-                active = { background = btnTex, textColor = Color.white },
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            buttonOnStyle = new GUIStyle(buttonStyle)
-            {
-                normal = { background = btnOnTex, textColor = Color.white },
-                hover = { background = MakeTex(2, 2, new Color(0.08f, 0.55f, 0.35f, 1f)), textColor = Color.white }
-            };
-
-            buttonOffStyle = new GUIStyle(buttonStyle);
-
-            titleStyle = new GUIStyle
-            {
-                fontSize = 18,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.35f, 0.85f, 1f) },
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            labelStyle = new GUIStyle
-            {
-                fontSize = 12,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.55f, 0.9f, 1f) }
-            };
-
-            searchStyle = new GUIStyle(GUI.skin.textField)
-            {
-                normal = { background = MakeTex(2, 2, new Color(0.01f, 0.04f, 0.12f, 1f)), textColor = Color.white },
-                fontSize = 13,
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            logStyle = new GUIStyle
-            {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.3f, 0.75f, 1f) }
-            };
-
-            stylesReady = true;
+            HandleYToggle();
+            UpdateMenuPosition();
+            RunMods();
+            HandleBlueTheme();
+            HandlePlatformBalls();
         }
 
-        private Texture2D MakeTex(int w, int h, Color col)
+        private void HandleYToggle()
         {
-            var pix = new Color[w * h];
-            for (int i = 0; i < pix.Length; i++) pix[i] = col;
-            var tex = new Texture2D(w, h);
-            tex.SetPixels(pix);
-            tex.Apply();
-            return tex;
+            bool yPressed = false;
+            try
+            {
+                var devices = new List<InputDevice>();
+                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, devices);
+                if (devices.Count > 0)
+                    devices[0].TryGetFeatureValue(CommonUsages.secondaryButton, out yPressed);
+            }
+            catch { }
+
+            // Toggle only on button down
+            if (yPressed && !yWasPressed)
+            {
+                menuOpen = !menuOpen;
+
+                if (menuOpen)
+                    CreateWristMenu();
+                else
+                    DestroyWristMenu();
+            }
+
+            yWasPressed = yPressed;
         }
 
-        public void AddLog(string msg)
+        private void CreateWristMenu()
         {
-            if (notificationLogs.Count > 6) notificationLogs.RemoveAt(0);
-            notificationLogs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
+            DestroyWristMenu();
+
+            menuObject = new GameObject("TvMenu_WristMenu");
+            menuCanvas = menuObject.AddComponent<Canvas>();
+            menuCanvas.renderMode = RenderMode.WorldSpace;
+
+            var scaler = menuObject.AddComponent<CanvasScaler>();
+            scaler.dynamicPixelsPerUnit = 10f;
+
+            menuObject.AddComponent<GraphicRaycaster>();
+
+            RectTransform rt = menuObject.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(800, 1300);
+            menuObject.transform.localScale = Vector3.one * 0.0007f;
+
+            // Background
+            GameObject bg = new GameObject("Background");
+            bg.transform.SetParent(menuObject.transform, false);
+            Image bgImage = bg.AddComponent<Image>();
+            bgImage.color = new Color(0.02f, 0.06f, 0.15f, 0.95f);
+            RectTransform bgRt = bg.GetComponent<RectTransform>();
+            bgRt.anchorMin = Vector2.zero;
+            bgRt.anchorMax = Vector2.one;
+            bgRt.offsetMin = Vector2.zero;
+            bgRt.offsetMax = Vector2.zero;
+
+            // Title + Version
+            CreateText(menuObject.transform, "TvMenu Beta", 30, new Vector2(0, 560), new Color(0.3f, 0.85f, 1f));
+            CreateText(menuObject.transform, "Version Beta 1.0.0", 18, new Vector2(0, 510), new Color(0.5f, 0.75f, 1f));
+
+            // Category buttons
+            CreateMenuButton(menuObject.transform, "MOVEMENT", new Vector2(-180, 430), () => { currentCategory = 0; RefreshModButtons(); });
+            CreateMenuButton(menuObject.transform, "VISUAL", new Vector2(0, 430), () => { currentCategory = 1; RefreshModButtons(); });
+            CreateMenuButton(menuObject.transform, "GUNS", new Vector2(180, 430), () => { currentCategory = 2; RefreshModButtons(); });
+            CreateMenuButton(menuObject.transform, "MISC", new Vector2(0, 360), () => { currentCategory = 3; RefreshModButtons(); });
+
+            // Blue theme toggle
+            CreateMenuButton(menuObject.transform, colorBlueEnabled ? "BLUE: ON" : "BLUE: OFF", new Vector2(0, 290), () =>
+            {
+                colorBlueEnabled = !colorBlueEnabled;
+                DestroyWristMenu();
+                CreateWristMenu();
+            });
+
+            // Disconnect / Server Hop
+            CreateMenuButton(menuObject.transform, "DISCONNECT", new Vector2(-130, -560), () =>
+            {
+                if (PhotonNetwork.InRoom) PhotonNetwork.Disconnect();
+            });
+
+            CreateMenuButton(menuObject.transform, "SERVER HOP", new Vector2(130, -560), () =>
+            {
+                if (PhotonNetwork.InRoom) PhotonNetwork.Disconnect();
+            });
+
+            RefreshModButtons();
+        }
+
+        private void RefreshModButtons()
+        {
+            // Remove old mod buttons
+            foreach (Transform child in menuObject.transform)
+            {
+                if (child.name.StartsWith("ModBtn_"))
+                    Destroy(child.gameObject);
+            }
+
+            string[] mods = null;
+            bool[] states = null;
+
+            if (currentCategory == 0) { mods = movementMods; states = movementStates; }
+            else if (currentCategory == 1) { mods = visualMods; states = visualStates; }
+            else if (currentCategory == 2) { mods = gunMods; states = gunStates; }
+            else { mods = miscSafetyMods; states = miscSafetyStates; }
+
+            float startY = 210f;
+            for (int i = 0; i < mods.Length; i++)
+            {
+                int index = i;
+                string modName = mods[i];
+                bool isNW = modName.Contains("[NW]");
+                bool isOn = states[i];
+
+                string label = modName + (isOn ? "  [ON]" : "  [OFF]");
+                Color col;
+
+                if (isNW)
+                {
+                    // Locked - greyed out
+                    col = new Color(0.25f, 0.25f, 0.25f);
+                    label = modName + "  [LOCKED]";
+                }
+                else if (isOn)
+                {
+                    col = new Color(0.1f, 0.6f, 0.3f);
+                }
+                else
+                {
+                    col = new Color(0.15f, 0.25f, 0.45f);
+                }
+
+                CreateMenuButton(menuObject.transform, label, new Vector2(0, startY - (i * 52)), () =>
+                {
+                    // Block [NW] mods from being toggled
+                    if (mods[index].Contains("[NW]")) return;
+
+                    states[index] = !states[index];
+                    DestroyWristMenu();
+                    CreateWristMenu();
+                }, col, "ModBtn_" + i);
+            }
+        }
+
+        private void CreateMenuButton(Transform parent, string text, Vector2 pos, Action onClick, Color? customColor = null, string objName = "Btn")
+        {
+            GameObject btnObj = new GameObject(objName);
+            btnObj.transform.SetParent(parent, false);
+
+            Image img = btnObj.AddComponent<Image>();
+            img.color = customColor ?? new Color(0.08f, 0.2f, 0.45f);
+
+            Button btn = btnObj.AddComponent<Button>();
+            btn.onClick.AddListener(() => onClick());
+
+            RectTransform rt = btnObj.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(360, 46);
+            rt.anchoredPosition = pos;
+
+            GameObject textObj = new GameObject("Text");
+            textObj.transform.SetParent(btnObj.transform, false);
+            Text txt = textObj.AddComponent<Text>();
+            txt.text = text;
+            txt.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            txt.fontSize = 18;
+            txt.color = Color.white;
+            txt.alignment = TextAnchor.MiddleCenter;
+
+            RectTransform textRt = textObj.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = Vector2.zero;
+            textRt.offsetMax = Vector2.zero;
+        }
+
+        private void CreateText(Transform parent, string content, int fontSize, Vector2 pos, Color color)
+        {
+            GameObject obj = new GameObject("Text");
+            obj.transform.SetParent(parent, false);
+            Text txt = obj.AddComponent<Text>();
+            txt.text = content;
+            txt.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            txt.fontSize = fontSize;
+            txt.color = color;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.fontStyle = FontStyle.Bold;
+
+            RectTransform rt = obj.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(700, 50);
+            rt.anchoredPosition = pos;
+        }
+
+        private void DestroyWristMenu()
+        {
+            if (menuObject != null)
+            {
+                Destroy(menuObject);
+                menuObject = null;
+            }
+        }
+
+        private void UpdateMenuPosition()
+        {
+            if (!menuOpen || menuObject == null) return;
+
+            leftHand = GetLeftHand();
+            if (leftHand == null) return;
+
+            menuObject.transform.position = leftHand.position + leftHand.up * 0.12f + leftHand.forward * 0.08f;
+            menuObject.transform.rotation = leftHand.rotation * Quaternion.Euler(0, 180f, 0);
         }
 
         private Transform GetLeftHand()
@@ -221,36 +354,6 @@ namespace TvMenu
             return false;
         }
 
-        private void Update()
-        {
-            bool yPressed = false;
-            try
-            {
-                var devices = new List<InputDevice>();
-                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, devices);
-                if (devices.Count > 0)
-                    devices[0].TryGetFeatureValue(CommonUsages.secondaryButton, out yPressed);
-            }
-            catch { }
-
-            if (yPressed || Input.GetKeyDown(KeyCode.Insert))
-                menuOpen = !menuOpen;
-
-            RunMods();
-            HandleBlueTheme();
-            UpdateFps();
-            HandlePlatformBalls();
-        }
-
-        private void UpdateFps()
-        {
-            if (Time.unscaledTime - lastFpsUpdate > 0.35f)
-            {
-                currentFps = Mathf.RoundToInt(1f / Time.unscaledDeltaTime);
-                lastFpsUpdate = Time.unscaledTime;
-            }
-        }
-
         private void HandleBlueTheme()
         {
             if (!colorBlueEnabled) return;
@@ -296,8 +399,6 @@ namespace TvMenu
                             r.material.EnableKeyword("_EMISSION");
                             r.material.SetColor("_EmissionColor", emission);
                         }
-                        if (r.material.HasProperty("_Color"))
-                            r.material.SetColor("_Color", blue);
                     }
 
                     if (r.sharedMaterial != null)
@@ -307,23 +408,6 @@ namespace TvMenu
                         {
                             r.sharedMaterial.EnableKeyword("_EMISSION");
                             r.sharedMaterial.SetColor("_EmissionColor", emission);
-                        }
-                    }
-                }
-
-                foreach (var line in UnityEngine.Object.FindObjectsOfType<GorillaPlayerScoreboardLine>())
-                {
-                    if (line == null) continue;
-                    foreach (Renderer r in line.GetComponentsInChildren<Renderer>(true))
-                    {
-                        if (r != null && r.material != null)
-                        {
-                            r.material.color = blue;
-                            if (r.material.HasProperty("_EmissionColor"))
-                            {
-                                r.material.EnableKeyword("_EMISSION");
-                                r.material.SetColor("_EmissionColor", emission);
-                            }
                         }
                     }
                 }
@@ -378,12 +462,12 @@ namespace TvMenu
             }
             catch { }
 
-            Transform leftHand = GetLeftHand();
-            Transform rightHand = GetRightHand();
+            Transform left = GetLeftHand();
+            Transform right = GetRightHand();
 
-            if (leftGrip && leftHand != null)
+            if (leftGrip && left != null)
             {
-                Vector3 pos = leftHand.position - Vector3.up * 0.08f;
+                Vector3 pos = left.position - Vector3.up * 0.08f;
                 if (leftBall == null) leftBall = CreateBall(pos);
                 else leftBall.transform.position = pos;
                 leftBallTimer = ballLifetime;
@@ -394,9 +478,9 @@ namespace TvMenu
                 if (leftBallTimer <= 0f && leftBall != null) { Destroy(leftBall); leftBall = null; }
             }
 
-            if (rightGrip && rightHand != null)
+            if (rightGrip && right != null)
             {
-                Vector3 pos = rightHand.position - Vector3.up * 0.08f;
+                Vector3 pos = right.position - Vector3.up * 0.08f;
                 if (rightBall == null) rightBall = CreateBall(pos);
                 else rightBall.transform.position = pos;
                 rightBallTimer = ballLifetime;
@@ -553,26 +637,6 @@ namespace TvMenu
             if (rb != null)
                 rb.detectCollisions = !movementStates[12];
 
-            // Fullbright
-            if (visualStates[1])
-            {
-                RenderSettings.ambientLight = Color.white * 1.45f;
-                RenderSettings.ambientIntensity = 1.7f;
-            }
-
-            // FOV
-            if (visualStates[4] && Camera.main != null)
-            {
-                if (!fovModified) originalFov = Camera.main.fieldOfView;
-                Camera.main.fieldOfView = fovValue;
-                fovModified = true;
-            }
-            else if (fovModified && Camera.main != null)
-            {
-                Camera.main.fieldOfView = originalFov;
-                fovModified = false;
-            }
-
             // Anti-Report
             if (miscSafetyStates[0])
             {
@@ -582,7 +646,6 @@ namespace TvMenu
                     {
                         if (line != null && line.reportButton != null && line.reportButton.activeSelf)
                         {
-                            AddLog("Anti-Report → Disconnect");
                             if (PhotonNetwork.InRoom) PhotonNetwork.Disconnect();
                             break;
                         }
@@ -597,94 +660,6 @@ namespace TvMenu
                 Transform head = GetHead();
                 if (head != null)
                     head.Rotate(0f, 480f * Time.deltaTime, 0f, Space.Self);
-            }
-        }
-
-        private void OnGUI()
-        {
-            float ly = 18f;
-            foreach (var log in notificationLogs)
-            {
-                GUI.Label(new Rect(18, ly, 620, 22), log, logStyle);
-                ly += 20;
-            }
-
-            if (visualStates[2])
-                GUI.Label(new Rect(Screen.width - 110, 12, 100, 24), $"FPS: {currentFps}", labelStyle);
-
-            if (!menuOpen) return;
-            InitStyles();
-
-            GUI.Box(new Rect(30, 30, 380, 640), "", boxStyle);
-            GUI.Label(new Rect(30, 38, 380, 28), "TvMenu Ultimate  •  BLUE EDITION", titleStyle);
-
-            if (GUI.Button(new Rect(42, 72, 100, 26), "Disconnect", buttonStyle))
-            {
-                if (PhotonNetwork.InRoom) { PhotonNetwork.Disconnect(); AddLog("Disconnected"); }
-            }
-            if (GUI.Button(new Rect(150, 72, 100, 26), "Server Hop", buttonStyle))
-            {
-                if (PhotonNetwork.InRoom) { PhotonNetwork.Disconnect(); AddLog("Server hopped"); }
-            }
-            if (GUI.Button(new Rect(258, 72, 130, 26), colorBlueEnabled ? "Blue Theme: ON" : "Blue Theme: OFF",
-                colorBlueEnabled ? buttonOnStyle : buttonOffStyle))
-            {
-                colorBlueEnabled = !colorBlueEnabled;
-                AddLog(colorBlueEnabled ? "Blue theme ON" : "Blue theme OFF");
-            }
-
-            GUI.Label(new Rect(42, 108, 55, 22), "Search", labelStyle);
-            searchQuery = GUI.TextField(new Rect(100, 106, 288, 24), searchQuery, searchStyle);
-
-            if (GUI.Button(new Rect(42, 140, 78, 26), "Move", currentCategory == 0 ? buttonOnStyle : buttonStyle)) { currentCategory = 0; pageIndex = 0; }
-            if (GUI.Button(new Rect(126, 140, 78, 26), "Visual", currentCategory == 1 ? buttonOnStyle : buttonStyle)) { currentCategory = 1; pageIndex = 0; }
-            if (GUI.Button(new Rect(210, 140, 78, 26), "Guns", currentCategory == 2 ? buttonOnStyle : buttonStyle)) { currentCategory = 2; pageIndex = 0; }
-            if (GUI.Button(new Rect(294, 140, 94, 26), "Misc", currentCategory == 3 ? buttonOnStyle : buttonStyle)) { currentCategory = 3; pageIndex = 0; }
-
-            if (GUI.Button(new Rect(42, 174, 155, 24), "< Prev", buttonStyle) && pageIndex > 0) pageIndex--;
-            if (GUI.Button(new Rect(207, 174, 165, 24), "Next >", buttonStyle)) pageIndex++;
-
-            float y = 210f;
-            int perPage = 12;
-
-            if (currentCategory == 0) DrawList(movementMods, movementStates, ref y, perPage);
-            else if (currentCategory == 1) DrawList(visualMods, visualStates, ref y, perPage);
-            else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
-            else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
-
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.5", labelStyle);
-        }
-
-        private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
-        {
-            var filtered = new List<int>();
-            for (int i = 0; i < mods.Length; i++)
-            {
-                if (string.IsNullOrEmpty(searchQuery) || mods[i].ToLower().Contains(searchQuery.ToLower()))
-                    filtered.Add(i);
-            }
-
-            int start = pageIndex * maxItems;
-            if (start >= filtered.Count && filtered.Count > 0)
-            {
-                pageIndex = 0;
-                start = 0;
-            }
-
-            int end = Mathf.Min(start + maxItems, filtered.Count);
-
-            for (int i = start; i < end; i++)
-            {
-                int idx = filtered[i];
-                bool on = states[idx];
-                string label = $"{mods[idx]}  {(on ? "● ON" : "○ OFF")}";
-
-                if (GUI.Button(new Rect(42, y, 354, 27), label, on ? buttonOnStyle : buttonOffStyle))
-                {
-                    states[idx] = !states[idx];
-                    AddLog($"{mods[idx]} → {(states[idx] ? "ON" : "OFF")}");
-                }
-                y += 30;
             }
         }
     }
