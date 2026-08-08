@@ -1,14 +1,17 @@
 name: Build Mod
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
@@ -21,7 +24,7 @@ jobs:
     - name: Build Project
       run: dotnet build --configuration Release --no-restore
 
-    - name: Upload Artifact (.dll)
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TvMenu
