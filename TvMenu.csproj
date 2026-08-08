@@ -13,15 +13,7 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <!-- Updated to match the nearest live version found by NuGet -->
     <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>Libs\UnityEngine.UI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
   </ItemGroup>
 
 </Project>
