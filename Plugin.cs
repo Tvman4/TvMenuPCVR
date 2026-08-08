@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.0")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.1")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -74,7 +74,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.0 — Platform Balls + WIP unlocked");
+            AddLog("TvMenu Ultimate 3.2.1 — Build fixed + Platform Balls");
         }
 
         private void InitStyles()
@@ -161,9 +161,66 @@ namespace TvMenu
             notificationLogs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
         }
 
+        // ================= SAFE ACCESSORS (fixes the CS1061 errors) =================
+        private Transform GetLeftHand()
+        {
+            try
+            {
+                if (GorillaTagger.Instance != null && GorillaTagger.Instance.leftHandTransform != null)
+                    return GorillaTagger.Instance.leftHandTransform;
+            }
+            catch { }
+            return null;
+        }
+
+        private Transform GetRightHand()
+        {
+            try
+            {
+                if (GorillaTagger.Instance != null && GorillaTagger.Instance.rightHandTransform != null)
+                    return GorillaTagger.Instance.rightHandTransform;
+            }
+            catch { }
+            return null;
+        }
+
+        private Transform GetHead()
+        {
+            try
+            {
+                if (GorillaTagger.Instance != null && GorillaTagger.Instance.headCollider != null)
+                    return GorillaTagger.Instance.headCollider.transform;
+            }
+            catch { }
+            return Camera.main != null ? Camera.main.transform : null;
+        }
+
+        private bool IsLeftHandTouching()
+        {
+            try
+            {
+                // Modern path
+                if (GorillaLocomotion.GTPlayer.Instance != null)
+                    return GorillaLocomotion.GTPlayer.Instance.IsHandTouching(true);
+            }
+            catch { }
+            return false;
+        }
+
+        private bool IsRightHandTouching()
+        {
+            try
+            {
+                if (GorillaLocomotion.GTPlayer.Instance != null)
+                    return GorillaLocomotion.GTPlayer.Instance.IsHandTouching(false);
+            }
+            catch { }
+            return false;
+        }
+
         private void Update()
         {
-            // Toggle menu
+            // Toggle menu (Y / Insert)
             bool yPressed = false;
             try
             {
@@ -254,9 +311,8 @@ namespace TvMenu
             }
 
             var col = ball.GetComponent<Collider>();
-            if (col != null) col.material = null; // less sticky by default
+            if (col != null) col.material = null;
 
-            // Optional slight bounce
             var rb = ball.AddComponent<Rigidbody>();
             rb.isKinematic = true;
             rb.useGravity = false;
@@ -266,15 +322,12 @@ namespace TvMenu
 
         private void HandlePlatformBalls()
         {
-            if (!movementStates[11]) // Platform Balls index
+            if (!movementStates[11])
             {
                 if (leftBall != null) { Destroy(leftBall); leftBall = null; }
                 if (rightBall != null) { Destroy(rightBall); rightBall = null; }
                 return;
             }
-
-            var player = GorillaLocomotion.Player.Instance;
-            if (player == null) return;
 
             bool leftGrip = false, rightGrip = false;
 
@@ -292,10 +345,13 @@ namespace TvMenu
             }
             catch { }
 
+            Transform leftHand = GetLeftHand();
+            Transform rightHand = GetRightHand();
+
             // Left ball
-            if (leftGrip && player.leftHandTransform != null)
+            if (leftGrip && leftHand != null)
             {
-                Vector3 pos = player.leftHandTransform.position - Vector3.up * 0.08f;
+                Vector3 pos = leftHand.position - Vector3.up * 0.08f;
                 if (leftBall == null)
                     leftBall = CreateBall(pos);
                 else
@@ -314,9 +370,9 @@ namespace TvMenu
             }
 
             // Right ball
-            if (rightGrip && player.rightHandTransform != null)
+            if (rightGrip && rightHand != null)
             {
-                Vector3 pos = player.rightHandTransform.position - Vector3.up * 0.08f;
+                Vector3 pos = rightHand.position - Vector3.up * 0.08f;
                 if (rightBall == null)
                     rightBall = CreateBall(pos);
                 else
@@ -337,19 +393,41 @@ namespace TvMenu
 
         private void RunMods()
         {
-            var player = GorillaLocomotion.Player.Instance;
-            if (player == null) return;
+            // Prefer GTPlayer, fall back to old Player if needed
+            GorillaLocomotion.GTPlayer gtPlayer = null;
+            try { gtPlayer = GorillaLocomotion.GTPlayer.Instance; } catch { }
 
-            var rb = player.GetComponent<Rigidbody>();
+            Rigidbody rb = null;
+            try
+            {
+                if (gtPlayer != null)
+                    rb = gtPlayer.GetComponent<Rigidbody>();
+                else if (GorillaLocomotion.Player.Instance != null)
+                    rb = GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>();
+            }
+            catch { }
 
+            // ===== MOVEMENT =====
             // Speed Boost
             if (movementStates[0])
             {
-                player.maxJumpSpeed = 6.5f * speedBoostMultiplier;
-                player.jumpMultiplier = 1.15f * speedBoostMultiplier;
+                try
+                {
+                    if (gtPlayer != null)
+                    {
+                        gtPlayer.maxJumpSpeed = 6.5f * speedBoostMultiplier;
+                        gtPlayer.jumpMultiplier = 1.15f * speedBoostMultiplier;
+                    }
+                    else if (GorillaLocomotion.Player.Instance != null)
+                    {
+                        GorillaLocomotion.Player.Instance.maxJumpSpeed = 6.5f * speedBoostMultiplier;
+                        GorillaLocomotion.Player.Instance.jumpMultiplier = 1.15f * speedBoostMultiplier;
+                    }
+                }
+                catch { }
             }
 
-            // Flight (all variants)
+            // Flight
             bool anyFly = movementStates[1] || movementStates[2] || movementStates[3] || movementStates[4];
             if (anyFly)
             {
@@ -360,7 +438,8 @@ namespace TvMenu
                 }
 
                 Vector3 dir = Vector3.zero;
-                Transform cam = Camera.main != null ? Camera.main.transform : player.headCollider.transform;
+                Transform cam = GetHead() ?? (Camera.main != null ? Camera.main.transform : null);
+                if (cam == null) return;
 
                 // WASD + vertical
                 if (movementStates[4] || movementStates[1])
@@ -395,8 +474,8 @@ namespace TvMenu
                 }
                 catch { }
 
-                if (dir.sqrMagnitude > 0.01f)
-                    player.transform.position += dir.normalized * flySpeed * Time.deltaTime;
+                if (dir.sqrMagnitude > 0.01f && GorillaTagger.Instance != null)
+                    GorillaTagger.Instance.transform.position += dir.normalized * flySpeed * Time.deltaTime;
             }
             else if (rb != null)
             {
@@ -405,9 +484,23 @@ namespace TvMenu
 
             // Long Arms
             if (movementStates[5])
-                player.transform.localScale = Vector3.one * armLengthMultiplier;
+            {
+                try
+                {
+                    if (GorillaTagger.Instance != null)
+                        GorillaTagger.Instance.transform.localScale = Vector3.one * armLengthMultiplier;
+                }
+                catch { }
+            }
             else
-                player.transform.localScale = Vector3.one;
+            {
+                try
+                {
+                    if (GorillaTagger.Instance != null)
+                        GorillaTagger.Instance.transform.localScale = Vector3.one;
+                }
+                catch { }
+            }
 
             // Air Jump
             if (movementStates[6] && Input.GetKeyDown(KeyCode.Space) && rb != null)
@@ -428,7 +521,7 @@ namespace TvMenu
             // Bunny Hop
             if (movementStates[8] && rb != null)
             {
-                bool touching = player.IsHandTouching(true) || player.IsHandTouching(false);
+                bool touching = IsLeftHandTouching() || IsRightHandTouching();
                 if (touching && rb.velocity.y < 0.15f)
                     rb.velocity = new Vector3(rb.velocity.x, 5.9f, rb.velocity.z);
             }
@@ -440,15 +533,11 @@ namespace TvMenu
                 rb.angularDrag = 0.05f;
             }
 
-            // Noclip (simple version)
+            // Noclip
             if (movementStates[12] && rb != null)
-            {
                 rb.detectCollisions = false;
-            }
             else if (rb != null)
-            {
                 rb.detectCollisions = true;
-            }
 
             // ===== VISUALS =====
             if (visualStates[1]) // Fullbright
@@ -469,28 +558,9 @@ namespace TvMenu
                 fovModified = false;
             }
 
-            // Ghost Mode (local transparency-ish)
-            if (visualStates[5])
-            {
-                // Soft local ghost - just makes your rig harder to see for yourself
-                // Full networked ghost needs more advanced hooks
-            }
-
-            // Invisibility (local)
-            if (gunStates[5])
-            {
-                // Basic local hide - full invis needs renderer disabling on network view
-            }
-
-            // ===== GUNS (basic working versions) =====
-            // Kick Gun & Tag Gun - simple ray + force / attempt
-            if ((gunStates[0] || gunStates[2]) && Input.GetMouseButtonDown(0) || GetTriggerDown())
-            {
-                // Basic implementation placeholder - expand with proper ray from hand if desired
-            }
-
             // ===== MISC =====
-            if (miscSafetyStates[0]) // Anti-Report
+            // Anti-Report
+            if (miscSafetyStates[0])
             {
                 try
                 {
@@ -507,27 +577,13 @@ namespace TvMenu
                 catch { }
             }
 
-            if (miscSafetyStates[1] && player.headCollider != null) // Head Spin
+            // Head Spin
+            if (miscSafetyStates[1])
             {
-                player.headCollider.transform.Rotate(0f, 480f * Time.deltaTime, 0f, SpaceAnchor.Self);
+                Transform head = GetHead();
+                if (head != null)
+                    head.Rotate(0f, 480f * Time.deltaTime, 0f, SpaceAnchor.Self);
             }
-        }
-
-        private bool GetTriggerDown()
-        {
-            try
-            {
-                var devices = new List<InputDevice>();
-                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, devices);
-                if (devices.Count > 0)
-                {
-                    bool trigger = false;
-                    devices[0].TryGetFeatureValue(CommonUsages.triggerButton, out trigger);
-                    return trigger;
-                }
-            }
-            catch { }
-            return false;
         }
 
         private void OnGUI()
@@ -587,7 +643,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.0", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.1", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
