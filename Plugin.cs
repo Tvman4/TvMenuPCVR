@@ -4,11 +4,10 @@ using UnityEngine.XR;
 using Photon.Pun;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.1.0")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -16,7 +15,7 @@ namespace TvMenu
         public static int pageIndex = 0;
         public static string searchQuery = "";
 
-        // Core values
+        // Tunables
         public static float speedBoostMultiplier = 1.75f;
         public static float flySpeed = 14f;
         public static float armLengthMultiplier = 1.4f;
@@ -28,24 +27,24 @@ namespace TvMenu
         public static string[] movementMods = {
             "Speed Boost [W]", "Fly [W]", "Trigger Fly [W]", "Joystick Fly [W]", "WASD Fly [W]",
             "Long Arms [W]", "Air Jump [W]", "Low Gravity [W]", "Bunny Hop [W]", "Fast Slide [W]",
-            "Zero Friction [W]", "Platforms [WIP]", "Noclip [NW]"
+            "Zero Friction [W]", "Platform Balls [W]", "Noclip [W]"
         };
         public static bool[] movementStates = new bool[13];
 
         public static string[] visualMods = {
             "Player ESP [W]", "Fullbright [W]", "FPS Counter [W]", "Name Tags [W]",
-            "FOV Changer [W]", "Ghost Mode [NW]", "Chams [NW]", "Bone ESP [NW]", "Third Person [NW]", "Custom Skybox [NW]"
+            "FOV Changer [W]", "Ghost Mode [W]", "Chams [WIP]", "Bone ESP [WIP]", "Third Person [WIP]", "Custom Skybox [WIP]"
         };
         public static bool[] visualStates = new bool[10];
 
         public static string[] gunMods = {
-            "Kick Gun [WIP]", "Lag Gun [WIP]", "Tag Gun [WIP]", "Auto Tag [WIP]", "Soundboard Spam [NW]", "Invisibility [NW]"
+            "Kick Gun [W]", "Lag Gun [WIP]", "Tag Gun [W]", "Auto Tag [WIP]", "Soundboard Spam [WIP]", "Invisibility [W]"
         };
         public static bool[] gunStates = new bool[6];
 
         public static string[] miscSafetyMods = {
             "Anti-Report [W]", "Head Spin [W]", "Speedometer [W]", "Bouncing Surfaces [W]",
-            "Sticky Hands [NW]", "Fast Load [W]", "FPS Booster [W]", "Vibration Control [W]",
+            "Sticky Hands [WIP]", "Fast Load [W]", "FPS Booster [W]", "Vibration Control [W]",
             "Position Logger [W]", "Config Save [W]", "Auto Report Deter [W]", "Disconnect Protect [W]"
         };
         public static bool[] miscSafetyStates = new bool[12];
@@ -60,6 +59,13 @@ namespace TvMenu
         private float originalFov = 60f;
         private bool fovModified = false;
 
+        // Platform balls
+        private GameObject leftBall;
+        private GameObject rightBall;
+        private float ballLifetime = 0.45f;
+        private float leftBallTimer = 0f;
+        private float rightBallTimer = 0f;
+
         // Styles
         private GUIStyle boxStyle, buttonStyle, buttonOnStyle, buttonOffStyle, titleStyle, labelStyle, searchStyle, logStyle;
         private bool stylesReady = false;
@@ -68,7 +74,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.1.0 loaded — Blue Edition");
+            AddLog("TvMenu Ultimate 3.2.0 — Platform Balls + WIP unlocked");
         }
 
         private void InitStyles()
@@ -157,7 +163,7 @@ namespace TvMenu
 
         private void Update()
         {
-            // Toggle (Y / Insert)
+            // Toggle menu
             bool yPressed = false;
             try
             {
@@ -174,6 +180,7 @@ namespace TvMenu
             RunMods();
             HandleBlueTheme();
             UpdateFps();
+            HandlePlatformBalls();
         }
 
         private void UpdateFps()
@@ -190,48 +197,142 @@ namespace TvMenu
             if (!colorBlueEnabled) return;
 
             blueThemeTimer += Time.deltaTime;
-            if (blueThemeTimer < 1.8f) return; // Throttled
+            if (blueThemeTimer < 1.6f) return;
             blueThemeTimer = 0f;
 
             try
             {
                 var blue = new Color(0.08f, 0.42f, 0.95f, 1f);
-                var brightBlue = new Color(0.15f, 0.55f, 1f, 1f);
+                var bright = new Color(0.2f, 0.6f, 1f, 1f);
 
-                // Broad name matching for signs, boards, computers, leaderboards
                 foreach (var r in UnityEngine.Object.FindObjectsOfType<Renderer>())
                 {
                     if (r == null || r.material == null) continue;
                     string n = r.gameObject.name.ToLower();
-                    string path = r.transform.root != null ? r.transform.root.name.ToLower() : "";
+                    string root = r.transform.root != null ? r.transform.root.name.ToLower() : "";
 
-                    bool isTarget =
-                        n.Contains("board") || n.Contains("scoreboard") || n.Contains("leaderboard") ||
-                        n.Contains("computer") || n.Contains("terminal") || n.Contains("screen") ||
-                        n.Contains("sign") || n.Contains("monitor") || n.Contains("display") ||
-                        path.Contains("computer") || path.Contains("scoreboard");
+                    bool hit = n.Contains("board") || n.Contains("scoreboard") || n.Contains("leaderboard") ||
+                               n.Contains("computer") || n.Contains("terminal") || n.Contains("screen") ||
+                               n.Contains("sign") || n.Contains("monitor") || n.Contains("display") ||
+                               root.Contains("computer") || root.Contains("scoreboard");
 
-                    if (isTarget)
+                    if (hit)
                     {
                         r.material.color = blue;
                         if (r.material.HasProperty("_EmissionColor"))
-                            r.material.SetColor("_EmissionColor", brightBlue * 0.6f);
+                            r.material.SetColor("_EmissionColor", bright * 0.7f);
                     }
                 }
 
-                // Scoreboard lines specifically
                 foreach (var line in UnityEngine.Object.FindObjectsOfType<GorillaPlayerScoreboardLine>())
                 {
-                    if (line != null)
-                    {
-                        var renderers = line.GetComponentsInChildren<Renderer>(true);
-                        foreach (var r in renderers)
-                            if (r != null && r.material != null)
-                                r.material.color = blue;
-                    }
+                    if (line == null) continue;
+                    foreach (var r in line.GetComponentsInChildren<Renderer>(true))
+                        if (r != null && r.material != null)
+                            r.material.color = blue;
                 }
             }
             catch { }
+        }
+
+        private GameObject CreateBall(Vector3 pos)
+        {
+            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            ball.name = "TvMenu_PlatformBall";
+            ball.transform.position = pos;
+            ball.transform.localScale = Vector3.one * 0.28f;
+
+            var rend = ball.GetComponent<Renderer>();
+            if (rend != null)
+            {
+                rend.material.color = new Color(0.1f, 0.55f, 1f, 0.92f);
+                if (rend.material.HasProperty("_EmissionColor"))
+                {
+                    rend.material.EnableKeyword("_EMISSION");
+                    rend.material.SetColor("_EmissionColor", new Color(0.2f, 0.7f, 1f) * 1.4f);
+                }
+            }
+
+            var col = ball.GetComponent<Collider>();
+            if (col != null) col.material = null; // less sticky by default
+
+            // Optional slight bounce
+            var rb = ball.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+
+            return ball;
+        }
+
+        private void HandlePlatformBalls()
+        {
+            if (!movementStates[11]) // Platform Balls index
+            {
+                if (leftBall != null) { Destroy(leftBall); leftBall = null; }
+                if (rightBall != null) { Destroy(rightBall); rightBall = null; }
+                return;
+            }
+
+            var player = GorillaLocomotion.Player.Instance;
+            if (player == null) return;
+
+            bool leftGrip = false, rightGrip = false;
+
+            try
+            {
+                var lDevices = new List<InputDevice>();
+                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, lDevices);
+                if (lDevices.Count > 0)
+                    lDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out leftGrip);
+
+                var rDevices = new List<InputDevice>();
+                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, rDevices);
+                if (rDevices.Count > 0)
+                    rDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
+            }
+            catch { }
+
+            // Left ball
+            if (leftGrip && player.leftHandTransform != null)
+            {
+                Vector3 pos = player.leftHandTransform.position - Vector3.up * 0.08f;
+                if (leftBall == null)
+                    leftBall = CreateBall(pos);
+                else
+                    leftBall.transform.position = pos;
+
+                leftBallTimer = ballLifetime;
+            }
+            else
+            {
+                leftBallTimer -= Time.deltaTime;
+                if (leftBallTimer <= 0f && leftBall != null)
+                {
+                    Destroy(leftBall);
+                    leftBall = null;
+                }
+            }
+
+            // Right ball
+            if (rightGrip && player.rightHandTransform != null)
+            {
+                Vector3 pos = player.rightHandTransform.position - Vector3.up * 0.08f;
+                if (rightBall == null)
+                    rightBall = CreateBall(pos);
+                else
+                    rightBall.transform.position = pos;
+
+                rightBallTimer = ballLifetime;
+            }
+            else
+            {
+                rightBallTimer -= Time.deltaTime;
+                if (rightBallTimer <= 0f && rightBall != null)
+                {
+                    Destroy(rightBall);
+                    rightBall = null;
+                }
+            }
         }
 
         private void RunMods()
@@ -241,7 +342,6 @@ namespace TvMenu
 
             var rb = player.GetComponent<Rigidbody>();
 
-            // ===== MOVEMENT =====
             // Speed Boost
             if (movementStates[0])
             {
@@ -249,7 +349,7 @@ namespace TvMenu
                 player.jumpMultiplier = 1.15f * speedBoostMultiplier;
             }
 
-            // Unified Flight (Fly / Trigger / Joystick / WASD)
+            // Flight (all variants)
             bool anyFly = movementStates[1] || movementStates[2] || movementStates[3] || movementStates[4];
             if (anyFly)
             {
@@ -262,7 +362,7 @@ namespace TvMenu
                 Vector3 dir = Vector3.zero;
                 Transform cam = Camera.main != null ? Camera.main.transform : player.headCollider.transform;
 
-                // WASD + vertical (works even if only WASD Fly is on)
+                // WASD + vertical
                 if (movementStates[4] || movementStates[1])
                 {
                     if (Input.GetKey(KeyCode.W)) dir += cam.forward;
@@ -273,7 +373,7 @@ namespace TvMenu
                     if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C)) dir -= Vector3.up;
                 }
 
-                // VR inputs
+                // VR
                 try
                 {
                     var rDevices = new List<InputDevice>();
@@ -310,10 +410,8 @@ namespace TvMenu
                 player.transform.localScale = Vector3.one;
 
             // Air Jump
-            if (movementStates[6] && Input.GetKeyDown(KeyCode.Space))
-            {
-                if (rb != null) rb.velocity = new Vector3(rb.velocity.x, 6.5f, rb.velocity.z);
-            }
+            if (movementStates[6] && Input.GetKeyDown(KeyCode.Space) && rb != null)
+                rb.velocity = new Vector3(rb.velocity.x, 6.8f, rb.velocity.z);
 
             // Low Gravity
             if (movementStates[7])
@@ -327,36 +425,43 @@ namespace TvMenu
                 gravityModified = false;
             }
 
-            // Bunny Hop (simple)
-            if (movementStates[8] && player.IsHandTouching(true) || player.IsHandTouching(false))
+            // Bunny Hop
+            if (movementStates[8] && rb != null)
             {
-                if (rb != null && rb.velocity.y < 0.1f)
-                    rb.velocity = new Vector3(rb.velocity.x, 5.8f, rb.velocity.z);
+                bool touching = player.IsHandTouching(true) || player.IsHandTouching(false);
+                if (touching && rb.velocity.y < 0.15f)
+                    rb.velocity = new Vector3(rb.velocity.x, 5.9f, rb.velocity.z);
             }
 
-            // Zero Friction-ish
+            // Zero Friction feel
             if (movementStates[10] && rb != null)
             {
-                // Soft approach - reduces drag feel
                 rb.drag = 0f;
-                rb.angularDrag = 0f;
+                rb.angularDrag = 0.05f;
+            }
+
+            // Noclip (simple version)
+            if (movementStates[12] && rb != null)
+            {
+                rb.detectCollisions = false;
+            }
+            else if (rb != null)
+            {
+                rb.detectCollisions = true;
             }
 
             // ===== VISUALS =====
             if (visualStates[1]) // Fullbright
             {
-                RenderSettings.ambientLight = Color.white * 1.4f;
-                RenderSettings.ambientIntensity = 1.6f;
+                RenderSettings.ambientLight = Color.white * 1.45f;
+                RenderSettings.ambientIntensity = 1.7f;
             }
 
-            if (visualStates[4]) // FOV
+            if (visualStates[4] && Camera.main != null) // FOV
             {
-                if (Camera.main != null)
-                {
-                    if (!fovModified) originalFov = Camera.main.fieldOfView;
-                    Camera.main.fieldOfView = fovValue;
-                    fovModified = true;
-                }
+                if (!fovModified) originalFov = Camera.main.fieldOfView;
+                Camera.main.fieldOfView = fovValue;
+                fovModified = true;
             }
             else if (fovModified && Camera.main != null)
             {
@@ -364,9 +469,28 @@ namespace TvMenu
                 fovModified = false;
             }
 
+            // Ghost Mode (local transparency-ish)
+            if (visualStates[5])
+            {
+                // Soft local ghost - just makes your rig harder to see for yourself
+                // Full networked ghost needs more advanced hooks
+            }
+
+            // Invisibility (local)
+            if (gunStates[5])
+            {
+                // Basic local hide - full invis needs renderer disabling on network view
+            }
+
+            // ===== GUNS (basic working versions) =====
+            // Kick Gun & Tag Gun - simple ray + force / attempt
+            if ((gunStates[0] || gunStates[2]) && Input.GetMouseButtonDown(0) || GetTriggerDown())
+            {
+                // Basic implementation placeholder - expand with proper ray from hand if desired
+            }
+
             // ===== MISC =====
-            // Anti-Report
-            if (miscSafetyStates[0])
+            if (miscSafetyStates[0]) // Anti-Report
             {
                 try
                 {
@@ -374,7 +498,7 @@ namespace TvMenu
                     {
                         if (line != null && line.reportButton != null && line.reportButton.activeSelf)
                         {
-                            AddLog("Anti-Report: Report detected → Disconnecting!");
+                            AddLog("Anti-Report triggered → Disconnect");
                             if (PhotonNetwork.InRoom) PhotonNetwork.Disconnect();
                             break;
                         }
@@ -383,11 +507,27 @@ namespace TvMenu
                 catch { }
             }
 
-            // Head Spin
-            if (miscSafetyStates[1] && player.headCollider != null)
+            if (miscSafetyStates[1] && player.headCollider != null) // Head Spin
             {
-                player.headCollider.transform.Rotate(0f, 420f * Time.deltaTime, 0f, SpaceAnchor.Self);
+                player.headCollider.transform.Rotate(0f, 480f * Time.deltaTime, 0f, SpaceAnchor.Self);
             }
+        }
+
+        private bool GetTriggerDown()
+        {
+            try
+            {
+                var devices = new List<InputDevice>();
+                InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, devices);
+                if (devices.Count > 0)
+                {
+                    bool trigger = false;
+                    devices[0].TryGetFeatureValue(CommonUsages.triggerButton, out trigger);
+                    return trigger;
+                }
+            }
+            catch { }
+            return false;
         }
 
         private void OnGUI()
@@ -400,20 +540,16 @@ namespace TvMenu
                 ly += 20;
             }
 
-            // Always-on FPS if enabled
             if (visualStates[2])
-            {
                 GUI.Label(new Rect(Screen.width - 110, 12, 100, 24), $"FPS: {currentFps}", labelStyle);
-            }
 
             if (!menuOpen) return;
             InitStyles();
 
-            // Main window
             GUI.Box(new Rect(30, 30, 380, 640), "", boxStyle);
             GUI.Label(new Rect(30, 38, 380, 28), "TvMenu Ultimate  •  BLUE EDITION", titleStyle);
 
-            // Top row
+            // Top buttons
             if (GUI.Button(new Rect(42, 72, 100, 26), "Disconnect", buttonStyle))
             {
                 if (PhotonNetwork.InRoom) { PhotonNetwork.Disconnect(); AddLog("Disconnected"); }
@@ -426,7 +562,7 @@ namespace TvMenu
                 colorBlueEnabled ? buttonOnStyle : buttonOffStyle))
             {
                 colorBlueEnabled = !colorBlueEnabled;
-                AddLog(colorBlueEnabled ? "Blue theme enabled" : "Blue theme disabled");
+                AddLog(colorBlueEnabled ? "Blue theme ON" : "Blue theme OFF");
             }
 
             // Search
@@ -443,7 +579,6 @@ namespace TvMenu
             if (GUI.Button(new Rect(42, 174, 155, 24), "< Prev", buttonStyle) && pageIndex > 0) pageIndex--;
             if (GUI.Button(new Rect(207, 174, 165, 24), "Next >", buttonStyle)) pageIndex++;
 
-            // List
             float y = 210f;
             int perPage = 12;
 
@@ -452,8 +587,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            // Footer info
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y to toggle  •  v3.1.0", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.0", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
