@@ -18,23 +18,23 @@
 
   <ItemGroup Condition="'$(PkgGorillaTag_GameLibs_Steam)' != ''">
     <Reference Include="UnityEngine">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.UI.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
