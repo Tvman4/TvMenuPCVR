@@ -13,7 +13,14 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" />
+    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <!-- Automatically add all DLLs from the NuGet package lib folder as references -->
+  <ItemGroup Condition="'$(PkgGorillaTag_GameLibs_Steam)' != ''">
+    <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', '*.dll', System.IO.SearchOption.AllDirectories))">
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
 </Project>
