@@ -7,35 +7,34 @@
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <GTagLibPath>/home/runner/.nuget/packages/gorillatag.gamelibs.steam/1.1.1.113-live</GTagLibPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" />
+    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" GeneratePathProperty="true" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(PkgGorillaTag_GameLibs_Steam)' != ''">
     <Reference Include="UnityEngine">
-      <HintPath>$(GTagLibPath)/UnityEngine.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(GTagLibPath)/UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(GTagLibPath)/UnityEngine.UI.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(GTagLibPath)/UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(GTagLibPath)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(PkgGorillaTag_GameLibs_Steam)/UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
