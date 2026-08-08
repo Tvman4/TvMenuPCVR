@@ -7,8 +7,7 @@
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <GTagLibPath Condition="'$(GTagLibPathवीण)' == ''">$(UserProfile)\.nuget\packages\gorillatag.gamelibs.steam\1.1.1.113\lib\net472</GTagLibPath>
-    <GTagLibPath Condition="Exists('/home/runner/.nuget/packages/gorillatag.gamelibs.steam/1.1.1.113/lib/net472')">/home/runner/.nuget/packages/gorillatag.gamelibs.steam/1.1.1.113/lib/net472</GTagLibPath>
+    <GTagLibPath>/home/runner/.nuget/packages/gorillatag.gamelibs.steam/1.1.1.113-live</GTagLibPath>
   </PropertyGroup>
 
   <ItemGroup>
