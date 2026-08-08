@@ -13,30 +13,7 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" GeneratePathProperty="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="UnityEngine">
-      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.dll'))</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.CoreModule.dll'))</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.UI.dll'))</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.UIModule.dll'))</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.TextRenderingModule.dll'))</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" />
   </ItemGroup>
 
 </Project>
