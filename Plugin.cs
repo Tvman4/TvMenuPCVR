@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.4")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.5")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -69,7 +69,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.4 loaded");
+            AddLog("TvMenu Ultimate 3.2.5 loaded");
         }
 
         private void InitStyles()
@@ -256,39 +256,76 @@ namespace TvMenu
             if (!colorBlueEnabled) return;
 
             blueThemeTimer += Time.deltaTime;
-            if (blueThemeTimer < 1.6f) return;
+            if (blueThemeTimer < 1.2f) return;
             blueThemeTimer = 0f;
 
             try
             {
-                var blue = new Color(0.08f, 0.42f, 0.95f, 1f);
-                var bright = new Color(0.2f, 0.6f, 1f, 1f);
+                Color blue = new Color(0.05f, 0.35f, 0.95f, 1f);
+                Color emission = new Color(0.1f, 0.5f, 1.2f);
 
-                foreach (var r in UnityEngine.Object.FindObjectsOfType<Renderer>())
+                string[] keywords = {
+                    "board", "scoreboard", "leaderboard", "computer", "terminal",
+                    "screen", "sign", "monitor", "display", "console", "keyboard"
+                };
+
+                foreach (Renderer r in UnityEngine.Object.FindObjectsOfType<Renderer>())
                 {
-                    if (r == null || r.material == null) continue;
-                    string n = r.gameObject.name.ToLower();
-                    string root = r.transform.root != null ? r.transform.root.name.ToLower() : "";
+                    if (r == null) continue;
 
-                    bool hit = n.Contains("board") || n.Contains("scoreboard") || n.Contains("leaderboard") ||
-                               n.Contains("computer") || n.Contains("terminal") || n.Contains("screen") ||
-                               n.Contains("sign") || n.Contains("monitor") || n.Contains("display") ||
-                               root.Contains("computer") || root.Contains("scoreboard");
+                    string name = r.gameObject.name.ToLower();
+                    string rootName = r.transform.root != null ? r.transform.root.name.ToLower() : "";
 
-                    if (hit)
+                    bool shouldColor = false;
+                    foreach (string key in keywords)
+                    {
+                        if (name.Contains(key) || rootName.Contains(key))
+                        {
+                            shouldColor = true;
+                            break;
+                        }
+                    }
+
+                    if (!shouldColor) continue;
+
+                    if (r.material != null)
                     {
                         r.material.color = blue;
                         if (r.material.HasProperty("_EmissionColor"))
-                            r.material.SetColor("_EmissionColor", bright * 0.7f);
+                        {
+                            r.material.EnableKeyword("_EMISSION");
+                            r.material.SetColor("_EmissionColor", emission);
+                        }
+                        if (r.material.HasProperty("_Color"))
+                            r.material.SetColor("_Color", blue);
+                    }
+
+                    if (r.sharedMaterial != null)
+                    {
+                        r.sharedMaterial.color = blue;
+                        if (r.sharedMaterial.HasProperty("_EmissionColor"))
+                        {
+                            r.sharedMaterial.EnableKeyword("_EMISSION");
+                            r.sharedMaterial.SetColor("_EmissionColor", emission);
+                        }
                     }
                 }
 
                 foreach (var line in UnityEngine.Object.FindObjectsOfType<GorillaPlayerScoreboardLine>())
                 {
                     if (line == null) continue;
-                    foreach (var r in line.GetComponentsInChildren<Renderer>(true))
+                    foreach (Renderer r in line.GetComponentsInChildren<Renderer>(true))
+                    {
                         if (r != null && r.material != null)
+                        {
                             r.material.color = blue;
+                            if (r.material.HasProperty("_EmissionColor"))
+                            {
+                                r.material.EnableKeyword("_EMISSION");
+                                r.material.SetColor("_EmissionColor", emission);
+                            }
+                        }
+                    }
                 }
             }
             catch { }
@@ -615,7 +652,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.4", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.5", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
