@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.3")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.4")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -69,7 +69,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.3 loaded");
+            AddLog("TvMenu Ultimate 3.2.4 loaded");
         }
 
         private void InitStyles()
@@ -559,7 +559,7 @@ namespace TvMenu
             {
                 Transform head = GetHead();
                 if (head != null)
-                    head.Rotate(0f, 480f * Time.deltaTime, 0f, SpaceAnchor.Self);
+                    head.Rotate(0f, 480f * Time.deltaTime, 0f, Space.Self);
             }
         }
 
@@ -615,7 +615,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.3", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.4", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
