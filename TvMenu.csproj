@@ -18,23 +18,23 @@
 
   <ItemGroup>
     <Reference Include="UnityEngine">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\lib\netstandard2.0\UnityEngine.dll</HintPath>
+      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.dll'))</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\lib\netstandard2.0\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.CoreModule.dll'))</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\lib\netstandard2.0\UnityEngine.UI.dll</HintPath>
+      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.UI.dll'))</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\lib\netstandard2.0\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.UIModule.dll'))</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(PkgGorillaTag_GameLibs_Steam)\lib\netstandard2.0\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$([MSBuild]::NormalizePath('$(PkgGorillaTag_GameLibs_Steam)', 'lib', 'netstandard2.0', 'UnityEngine.TextRenderingModule.dll'))</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
