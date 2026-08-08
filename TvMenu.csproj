@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <!-- Dynamically locate and include all UnityEngine DLLs from wherever NuGet unpacks them -->
-  Target Name="IncludeGameLibs" BeforeTargets="CollectPackageReferences;FindReferenceAssemblies;ResolveAssemblyReferences">
+  <Target Name="IncludeGameLibs" BeforeTargets="CollectPackageReferences;FindReferenceAssemblies;ResolveAssemblyReferences">
     <ItemGroup Condition="'$(PkgGorillaTag_GameLibs_Steam)' != ''">
       <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.dll', System.IO.SearchOption.AllDirectories))">
         <Private>false</Private>
