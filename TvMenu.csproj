@@ -13,30 +13,28 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
-    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" />
+    <PackageReference Include="GorillaTag.GameLibs.Steam" Version="1.1.1-live" GeneratePathProperty="true" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="UnityEngine">
-      <HintPath>$(NuGetPackageRoot)gorillatag.gamelibs.steam/1.1.1.113/lib/net472/UnityEngine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(NuGetPackageRoot)gorillatag.gamelibs.steam/1.1.1.113/lib/net472/UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>$(NuGetPackageRoot)gorillatag.gamelibs.steam/1.1.1.113/lib/net472/UnityEngine.UI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(NuGetPackageRoot)gorillatag.gamelibs.steam/1.1.1.113/lib/net472/UnityEngine.UIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(NuGetPackageRoot)gorillatag.gamelibs.steam/1.1.1.113/lib/net472/UnityEngine.TextRenderingModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
+  <!-- Dynamically locate and include all UnityEngine DLLs from wherever NuGet unpacks them -->
+  Target Name="IncludeGameLibs" BeforeTargets="CollectPackageReferences;FindReferenceAssemblies;ResolveAssemblyReferences">
+    <ItemGroup Condition="'$(PkgGorillaTag_GameLibs_Steam)' != ''">
+      <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.dll', System.IO.SearchOption.AllDirectories))">
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.CoreModule.dll', System.IO.SearchOption.AllDirectories))">
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.UI.dll', System.IO.SearchOption.AllDirectories))">
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.UIModule.dll', System.IO.SearchOption.AllDirectories))">
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="$([System.IO.Directory]::GetFiles('$(PkgGorillaTag_GameLibs_Steam)', 'UnityEngine.TextRenderingModule.dll', System.IO.SearchOption.AllDirectories))">
+        <Private>false</Private>
+      </Reference>
+    </ItemGroup>
+  </Target>
 
 </Project>
