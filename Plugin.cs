@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.1")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.2")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -15,7 +15,6 @@ namespace TvMenu
         public static int pageIndex = 0;
         public static string searchQuery = "";
 
-        // Tunables
         public static float speedBoostMultiplier = 1.75f;
         public static float flySpeed = 14f;
         public static float armLengthMultiplier = 1.4f;
@@ -23,7 +22,6 @@ namespace TvMenu
         public static float fovValue = 90f;
         public static bool colorBlueEnabled = true;
 
-        // Categories
         public static string[] movementMods = {
             "Speed Boost [W]", "Fly [W]", "Trigger Fly [W]", "Joystick Fly [W]", "WASD Fly [W]",
             "Long Arms [W]", "Air Jump [W]", "Low Gravity [W]", "Bunny Hop [W]", "Fast Slide [W]",
@@ -49,7 +47,6 @@ namespace TvMenu
         };
         public static bool[] miscSafetyStates = new bool[12];
 
-        // Runtime
         private static List<string> notificationLogs = new List<string>();
         private float blueThemeTimer = 0f;
         private float lastFpsUpdate = 0f;
@@ -59,14 +56,12 @@ namespace TvMenu
         private float originalFov = 60f;
         private bool fovModified = false;
 
-        // Platform balls
         private GameObject leftBall;
         private GameObject rightBall;
         private float ballLifetime = 0.45f;
         private float leftBallTimer = 0f;
         private float rightBallTimer = 0f;
 
-        // Styles
         private GUIStyle boxStyle, buttonStyle, buttonOnStyle, buttonOffStyle, titleStyle, labelStyle, searchStyle, logStyle;
         private bool stylesReady = false;
         private Texture2D boxTex, btnTex, btnHoverTex, btnOnTex;
@@ -74,7 +69,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.1 — Build fixed + Platform Balls");
+            AddLog("TvMenu Ultimate 3.2.2 loaded");
         }
 
         private void InitStyles()
@@ -161,13 +156,15 @@ namespace TvMenu
             notificationLogs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
         }
 
-        // ================= SAFE ACCESSORS (fixes the CS1061 errors) =================
+        // -------- Safe accessors (work with both stubs + real game) --------
         private Transform GetLeftHand()
         {
             try
             {
                 if (GorillaTagger.Instance != null && GorillaTagger.Instance.leftHandTransform != null)
                     return GorillaTagger.Instance.leftHandTransform;
+                if (GorillaLocomotion.Player.Instance != null && GorillaLocomotion.Player.Instance.leftHandTransform != null)
+                    return GorillaLocomotion.Player.Instance.leftHandTransform;
             }
             catch { }
             return null;
@@ -179,6 +176,8 @@ namespace TvMenu
             {
                 if (GorillaTagger.Instance != null && GorillaTagger.Instance.rightHandTransform != null)
                     return GorillaTagger.Instance.rightHandTransform;
+                if (GorillaLocomotion.Player.Instance != null && GorillaLocomotion.Player.Instance.rightHandTransform != null)
+                    return GorillaLocomotion.Player.Instance.rightHandTransform;
             }
             catch { }
             return null;
@@ -190,6 +189,8 @@ namespace TvMenu
             {
                 if (GorillaTagger.Instance != null && GorillaTagger.Instance.headCollider != null)
                     return GorillaTagger.Instance.headCollider.transform;
+                if (GorillaLocomotion.Player.Instance != null && GorillaLocomotion.Player.Instance.headCollider != null)
+                    return GorillaLocomotion.Player.Instance.headCollider.transform;
             }
             catch { }
             return Camera.main != null ? Camera.main.transform : null;
@@ -199,9 +200,10 @@ namespace TvMenu
         {
             try
             {
-                // Modern path
                 if (GorillaLocomotion.GTPlayer.Instance != null)
                     return GorillaLocomotion.GTPlayer.Instance.IsHandTouching(true);
+                if (GorillaLocomotion.Player.Instance != null)
+                    return GorillaLocomotion.Player.Instance.IsHandTouching(true);
             }
             catch { }
             return false;
@@ -213,6 +215,8 @@ namespace TvMenu
             {
                 if (GorillaLocomotion.GTPlayer.Instance != null)
                     return GorillaLocomotion.GTPlayer.Instance.IsHandTouching(false);
+                if (GorillaLocomotion.Player.Instance != null)
+                    return GorillaLocomotion.Player.Instance.IsHandTouching(false);
             }
             catch { }
             return false;
@@ -220,7 +224,6 @@ namespace TvMenu
 
         private void Update()
         {
-            // Toggle menu (Y / Insert)
             bool yPressed = false;
             try
             {
@@ -310,9 +313,6 @@ namespace TvMenu
                 }
             }
 
-            var col = ball.GetComponent<Collider>();
-            if (col != null) col.material = null;
-
             var rb = ball.AddComponent<Rigidbody>();
             rb.isKinematic = true;
             rb.useGravity = false;
@@ -330,93 +330,69 @@ namespace TvMenu
             }
 
             bool leftGrip = false, rightGrip = false;
-
             try
             {
                 var lDevices = new List<InputDevice>();
                 InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, lDevices);
-                if (lDevices.Count > 0)
-                    lDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out leftGrip);
+                if (lDevices.Count > 0) lDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out leftGrip);
 
                 var rDevices = new List<InputDevice>();
                 InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, rDevices);
-                if (rDevices.Count > 0)
-                    rDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
+                if (rDevices.Count > 0) rDevices[0].TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
             }
             catch { }
 
             Transform leftHand = GetLeftHand();
             Transform rightHand = GetRightHand();
 
-            // Left ball
             if (leftGrip && leftHand != null)
             {
                 Vector3 pos = leftHand.position - Vector3.up * 0.08f;
-                if (leftBall == null)
-                    leftBall = CreateBall(pos);
-                else
-                    leftBall.transform.position = pos;
-
+                if (leftBall == null) leftBall = CreateBall(pos);
+                else leftBall.transform.position = pos;
                 leftBallTimer = ballLifetime;
             }
             else
             {
                 leftBallTimer -= Time.deltaTime;
-                if (leftBallTimer <= 0f && leftBall != null)
-                {
-                    Destroy(leftBall);
-                    leftBall = null;
-                }
+                if (leftBallTimer <= 0f && leftBall != null) { Destroy(leftBall); leftBall = null; }
             }
 
-            // Right ball
             if (rightGrip && rightHand != null)
             {
                 Vector3 pos = rightHand.position - Vector3.up * 0.08f;
-                if (rightBall == null)
-                    rightBall = CreateBall(pos);
-                else
-                    rightBall.transform.position = pos;
-
+                if (rightBall == null) rightBall = CreateBall(pos);
+                else rightBall.transform.position = pos;
                 rightBallTimer = ballLifetime;
             }
             else
             {
                 rightBallTimer -= Time.deltaTime;
-                if (rightBallTimer <= 0f && rightBall != null)
-                {
-                    Destroy(rightBall);
-                    rightBall = null;
-                }
+                if (rightBallTimer <= 0f && rightBall != null) { Destroy(rightBall); rightBall = null; }
             }
         }
 
         private void RunMods()
         {
-            // Prefer GTPlayer, fall back to old Player if needed
-            GorillaLocomotion.GTPlayer gtPlayer = null;
-            try { gtPlayer = GorillaLocomotion.GTPlayer.Instance; } catch { }
-
             Rigidbody rb = null;
             try
             {
-                if (gtPlayer != null)
-                    rb = gtPlayer.GetComponent<Rigidbody>();
+                if (GorillaLocomotion.GTPlayer.Instance != null)
+                    rb = GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>();
                 else if (GorillaLocomotion.Player.Instance != null)
                     rb = GorillaLocomotion.Player.Instance.GetComponent<Rigidbody>();
             }
             catch { }
 
-            // ===== MOVEMENT =====
             // Speed Boost
             if (movementStates[0])
             {
                 try
                 {
-                    if (gtPlayer != null)
+                    if (GorillaLocomotion.GTPlayer.Instance != null)
                     {
-                        gtPlayer.maxJumpSpeed = 6.5f * speedBoostMultiplier;
-                        gtPlayer.jumpMultiplier = 1.15f * speedBoostMultiplier;
+                        GorillaLocomotion.GTPlayer.Instance.maxJumpSpeed = 6.5f * speedBoostMultiplier;
+                        GorillaLocomotion.GTPlayer.Instance.jumpMultiplier = 1.15f * speedBoostMultiplier;
                     }
                     else if (GorillaLocomotion.Player.Instance != null)
                     {
@@ -438,10 +414,9 @@ namespace TvMenu
                 }
 
                 Vector3 dir = Vector3.zero;
-                Transform cam = GetHead() ?? (Camera.main != null ? Camera.main.transform : null);
+                Transform cam = GetHead();
                 if (cam == null) return;
 
-                // WASD + vertical
                 if (movementStates[4] || movementStates[1])
                 {
                     if (Input.GetKey(KeyCode.W)) dir += cam.forward;
@@ -452,7 +427,6 @@ namespace TvMenu
                     if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C)) dir -= Vector3.up;
                 }
 
-                // VR
                 try
                 {
                     var rDevices = new List<InputDevice>();
@@ -465,17 +439,24 @@ namespace TvMenu
                         rDevices[0].TryGetFeatureValue(CommonUsages.triggerButton, out trigger);
                         rDevices[0].TryGetFeatureValue(CommonUsages.primary2DAxis, out stick);
 
-                        if (primary || (movementStates[2] && trigger))
-                            dir += cam.forward;
-
+                        if (primary || (movementStates[2] && trigger)) dir += cam.forward;
                         if (movementStates[3] && stick.magnitude > 0.12f)
                             dir += cam.TransformDirection(new Vector3(stick.x, 0f, stick.y));
                     }
                 }
                 catch { }
 
-                if (dir.sqrMagnitude > 0.01f && GorillaTagger.Instance != null)
-                    GorillaTagger.Instance.transform.position += dir.normalized * flySpeed * Time.deltaTime;
+                if (dir.sqrMagnitude > 0.01f)
+                {
+                    try
+                    {
+                        if (GorillaTagger.Instance != null)
+                            GorillaTagger.Instance.transform.position += dir.normalized * flySpeed * Time.deltaTime;
+                        else if (GorillaLocomotion.Player.Instance != null)
+                            GorillaLocomotion.Player.Instance.transform.position += dir.normalized * flySpeed * Time.deltaTime;
+                    }
+                    catch { }
+                }
             }
             else if (rb != null)
             {
@@ -483,24 +464,24 @@ namespace TvMenu
             }
 
             // Long Arms
-            if (movementStates[5])
+            try
             {
-                try
+                if (movementStates[5])
                 {
                     if (GorillaTagger.Instance != null)
                         GorillaTagger.Instance.transform.localScale = Vector3.one * armLengthMultiplier;
+                    else if (GorillaLocomotion.Player.Instance != null)
+                        GorillaLocomotion.Player.Instance.transform.localScale = Vector3.one * armLengthMultiplier;
                 }
-                catch { }
-            }
-            else
-            {
-                try
+                else
                 {
                     if (GorillaTagger.Instance != null)
                         GorillaTagger.Instance.transform.localScale = Vector3.one;
+                    else if (GorillaLocomotion.Player.Instance != null)
+                        GorillaLocomotion.Player.Instance.transform.localScale = Vector3.one;
                 }
-                catch { }
             }
+            catch { }
 
             // Air Jump
             if (movementStates[6] && Input.GetKeyDown(KeyCode.Space) && rb != null)
@@ -521,12 +502,11 @@ namespace TvMenu
             // Bunny Hop
             if (movementStates[8] && rb != null)
             {
-                bool touching = IsLeftHandTouching() || IsRightHandTouching();
-                if (touching && rb.velocity.y < 0.15f)
+                if ((IsLeftHandTouching() || IsRightHandTouching()) && rb.velocity.y < 0.15f)
                     rb.velocity = new Vector3(rb.velocity.x, 5.9f, rb.velocity.z);
             }
 
-            // Zero Friction feel
+            // Zero Friction
             if (movementStates[10] && rb != null)
             {
                 rb.drag = 0f;
@@ -534,19 +514,18 @@ namespace TvMenu
             }
 
             // Noclip
-            if (movementStates[12] && rb != null)
-                rb.detectCollisions = false;
-            else if (rb != null)
-                rb.detectCollisions = true;
+            if (rb != null)
+                rb.detectCollisions = !movementStates[12];
 
-            // ===== VISUALS =====
-            if (visualStates[1]) // Fullbright
+            // Fullbright
+            if (visualStates[1])
             {
                 RenderSettings.ambientLight = Color.white * 1.45f;
                 RenderSettings.ambientIntensity = 1.7f;
             }
 
-            if (visualStates[4] && Camera.main != null) // FOV
+            // FOV
+            if (visualStates[4] && Camera.main != null)
             {
                 if (!fovModified) originalFov = Camera.main.fieldOfView;
                 Camera.main.fieldOfView = fovValue;
@@ -558,7 +537,6 @@ namespace TvMenu
                 fovModified = false;
             }
 
-            // ===== MISC =====
             // Anti-Report
             if (miscSafetyStates[0])
             {
@@ -568,7 +546,7 @@ namespace TvMenu
                     {
                         if (line != null && line.reportButton != null && line.reportButton.activeSelf)
                         {
-                            AddLog("Anti-Report triggered → Disconnect");
+                            AddLog("Anti-Report → Disconnect");
                             if (PhotonNetwork.InRoom) PhotonNetwork.Disconnect();
                             break;
                         }
@@ -588,7 +566,6 @@ namespace TvMenu
 
         private void OnGUI()
         {
-            // Logs
             float ly = 18f;
             foreach (var log in notificationLogs)
             {
@@ -605,7 +582,6 @@ namespace TvMenu
             GUI.Box(new Rect(30, 30, 380, 640), "", boxStyle);
             GUI.Label(new Rect(30, 38, 380, 28), "TvMenu Ultimate  •  BLUE EDITION", titleStyle);
 
-            // Top buttons
             if (GUI.Button(new Rect(42, 72, 100, 26), "Disconnect", buttonStyle))
             {
                 if (PhotonNetwork.InRoom) { PhotonNetwork.Disconnect(); AddLog("Disconnected"); }
@@ -621,17 +597,14 @@ namespace TvMenu
                 AddLog(colorBlueEnabled ? "Blue theme ON" : "Blue theme OFF");
             }
 
-            // Search
             GUI.Label(new Rect(42, 108, 55, 22), "Search", labelStyle);
             searchQuery = GUI.TextField(new Rect(100, 106, 288, 24), searchQuery, searchStyle);
 
-            // Tabs
             if (GUI.Button(new Rect(42, 140, 78, 26), "Move", currentCategory == 0 ? buttonOnStyle : buttonStyle)) { currentCategory = 0; pageIndex = 0; }
             if (GUI.Button(new Rect(126, 140, 78, 26), "Visual", currentCategory == 1 ? buttonOnStyle : buttonStyle)) { currentCategory = 1; pageIndex = 0; }
             if (GUI.Button(new Rect(210, 140, 78, 26), "Guns", currentCategory == 2 ? buttonOnStyle : buttonStyle)) { currentCategory = 2; pageIndex = 0; }
             if (GUI.Button(new Rect(294, 140, 94, 26), "Misc", currentCategory == 3 ? buttonOnStyle : buttonStyle)) { currentCategory = 3; pageIndex = 0; }
 
-            // Pagination
             if (GUI.Button(new Rect(42, 174, 155, 24), "< Prev", buttonStyle) && pageIndex > 0) pageIndex--;
             if (GUI.Button(new Rect(207, 174, 165, 24), "Next >", buttonStyle)) pageIndex++;
 
@@ -643,7 +616,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.1", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.2", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
