@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace TvMenu
 {
-    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.2")]
+    [BepInPlugin("org.tv.gorillatag.tvmenu", "TvMenu Ultimate", "3.2.3")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool menuOpen = true;
@@ -69,7 +69,7 @@ namespace TvMenu
         private void Awake()
         {
             originalGravity = Physics.gravity;
-            AddLog("TvMenu Ultimate 3.2.2 loaded");
+            AddLog("TvMenu Ultimate 3.2.3 loaded");
         }
 
         private void InitStyles()
@@ -156,7 +156,6 @@ namespace TvMenu
             notificationLogs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
         }
 
-        // -------- Safe accessors (work with both stubs + real game) --------
         private Transform GetLeftHand()
         {
             try
@@ -616,7 +615,7 @@ namespace TvMenu
             else if (currentCategory == 2) DrawList(gunMods, gunStates, ref y, perPage);
             else DrawList(miscSafetyMods, miscSafetyStates, ref y, perPage);
 
-            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.2", labelStyle);
+            GUI.Label(new Rect(42, 630, 350, 20), $"Page {pageIndex + 1}  •  Insert / Y toggle  •  v3.2.3", labelStyle);
         }
 
         private void DrawList(string[] mods, bool[] states, ref float y, int maxItems)
